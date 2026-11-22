@@ -159,9 +159,9 @@ def sign_in(access_token, retries=3, backoff=10):
             # 处理签到结果
             if status and status > 0:
                 if gain_num is not None and gain_num != 0:
-                    print(f"✅ [账号{mask_account(customer_code)}] 今日签到成功")
+                    print(f"✅ [账号{customer_code}] 今日签到成功")
                     return ("ok",
-                            f"✅ 账号({mask_account(customer_code)})：获取{gain_num}个金豆，当前总数：{integral_voucher + gain_num}")
+                            f"✅ 账号({customer_code})：获取{gain_num}个金豆，当前总数：{integral_voucher + gain_num}")
                 else:
                     # 第七天特殊处理
                     seventh_response = requests.get(seventh_day_url, headers=headers, timeout=15)
@@ -169,30 +169,30 @@ def sign_in(access_token, retries=3, backoff=10):
                     seventh_result = seventh_response.json()
 
                     if seventh_result.get("success"):
-                        print(f"🎉 [账号{mask_account(customer_code)}] 第七天签到成功")
+                        print(f"🎉 [账号{customer_code}] 第七天签到成功")
                         return ("ok",
-                                f"🎉 账号({mask_account(customer_code)})：第七天签到成功，当前金豆总数：{integral_voucher + 8}")
+                                f"🎉 账号({customer_code})：第七天签到成功，当前金豆总数：{integral_voucher + 8}")
                     else:
-                        print(f"ℹ️ [账号{mask_account(customer_code)}] 第七天签到失败，无金豆获取")
+                        print(f"ℹ️ [账号{customer_code}] 第七天签到失败，无金豆获取")
                         return ("already", None)
             else:
-                print(f"ℹ️ [账号{mask_account(customer_code)}] 今日已签到或签到失败")
+                print(f"ℹ️ [账号{customer_code}] 今日已签到或签到失败")
                 return ("already", None)
 
         except RequestException as e:
-            print(f"⚠️ [账号{mask_account(access_token)}] 第{attempt}次请求失败: {str(e)}")
+            print(f"⚠️ [账号{customer_code}] 第{attempt}次请求失败: {str(e)}")
             if attempt < retries:
                 wait = backoff * attempt
                 print(f"⏳ {wait} 秒后重试...")
                 time.sleep(wait)
             else:
-                print(f"❌ [账号{mask_account(access_token)}] 已重试 {retries} 次，放弃")
+                print(f"❌ [账号{customer_code}] 已重试 {retries} 次，放弃")
                 return ("fail", None)
         except KeyError as e:
-            print(f"❌ [账号{mask_account(access_token)}] 数据解析失败: 缺少键 {str(e)}")
+            print(f"❌ [账号{customer_code}] 数据解析失败: 缺少键 {str(e)}")
             return ("fail", None)
         except Exception as e:
-            print(f"❌ [账号{mask_account(access_token)}] 未知错误: {str(e)}")
+            print(f"❌ [账号{customer_code}] 未知错误: {str(e)}")
             return ("fail", None)
 
 
@@ -246,7 +246,7 @@ def main():
             # 当日已签到 -> 直接跳过, 零请求 (防风控)
             done = state["days"].get(today, {}).get(key)
             if done:
-                print(f"⏭️ [账号{mask_account(token)}] 今日已处理 (记忆: {done}), 跳过")
+                print(f"⏭️ [账号{customer_code}] 今日已处理 (记忆: {done}), 跳过")
                 continue
 
             # 执行签到
