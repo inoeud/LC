@@ -69,26 +69,10 @@ def mark_done(state, today, key, status):
 # ======== 工具函数 ========
 
 def mask_account(account):
-    """用于打印时隐藏部分账号信息"""
+    """用于打印时隐藏部分账号信息 (仅用于 token, 客编已明文输出)"""
     if len(account) >= 4:
         return account[:2] + '****' + account[-2:]
     return '****'
-
-
-def mask_json_customer_code(data):
-    """递归地脱敏 JSON 中的 customerCode 字段"""
-    if isinstance(data, dict):
-        new_data = {}
-        for k, v in data.items():
-            if k == "customerCode" and isinstance(v, str):
-                new_data[k] = v[:1] + "xxxxx" + v[-2:]
-            else:
-                new_data[k] = mask_json_customer_code(v)
-        return new_data
-    elif isinstance(data, list):
-        return [mask_json_customer_code(i) for i in data]
-    else:
-        return data
 
 
 # ======== 推送通知 ========
@@ -180,19 +164,19 @@ def sign_in(access_token, retries=3, backoff=10):
                 return ("already", None)
 
         except RequestException as e:
-            print(f"⚠️ [账号{customer_code}] 第{attempt}次请求失败: {str(e)}")
+            print(f"⚠️ [账号{mask_account(access_token)}] 第{attempt}次请求失败: {str(e)}")
             if attempt < retries:
                 wait = backoff * attempt
                 print(f"⏳ {wait} 秒后重试...")
                 time.sleep(wait)
             else:
-                print(f"❌ [账号{customer_code}] 已重试 {retries} 次，放弃")
+                print(f"❌ [账号{mask_account(access_token)}] 已重试 {retries} 次，放弃")
                 return ("fail", None)
         except KeyError as e:
-            print(f"❌ [账号{customer_code}] 数据解析失败: 缺少键 {str(e)}")
+            print(f"❌ [账号{mask_account(access_token)}] 数据解析失败: 缺少键 {str(e)}")
             return ("fail", None)
         except Exception as e:
-            print(f"❌ [账号{customer_code}] 未知错误: {str(e)}")
+            print(f"❌ [账号{mask_account(access_token)}] 未知错误: {str(e)}")
             return ("fail", None)
 
 
@@ -244,9 +228,10 @@ def main():
             key = token_key(token)
 
             # 当日已签到 -> 直接跳过, 零请求 (防风控)
+            # 注意: 此路径不发请求, 拿不到 customer_code, 只能显示 token 指纹
             done = state["days"].get(today, {}).get(key)
             if done:
-                print(f"⏭️ [账号{customer_code}] 今日已处理 (记忆: {done}), 跳过")
+                print(f"⏭️ [账号{mask_account(token)}] 今日已处理 (记忆: {done}), 跳过")
                 continue
 
             # 执行签到
