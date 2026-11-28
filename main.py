@@ -258,7 +258,9 @@ def main():
                 state_changed = True
 
             # 如果不是最后一个账号，则等待随机时间
-            if i < len(tokens) - 1:
+            # 只有 ok (真正签到成功) 保持防风控间隔;
+            # already / fail 均无有效签到动作, 直接处理下一个账号, 不等。
+            if status == "ok" and i < len(tokens) - 1:
                 # 随机间隔 (防风控: 固定节奏是机器特征); GHA 无人值守加大到 45~150s
                 import os as _os
                 lo, hi = (45, 150) if _os.environ.get('GITHUB_ACTIONS') == 'true' else (10, 30)
